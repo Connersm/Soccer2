@@ -73,6 +73,7 @@ public class SoccerDatabase implements SoccerDB {
         String key = makeKey(firstName, lastName);
         if(!database.containsKey(key)) { return false; }
         database.get(key).bumpGoals();
+        return true;
     }
 
     /**
@@ -83,7 +84,7 @@ public class SoccerDatabase implements SoccerDB {
     @Override
     public boolean bumpYellowCards(String firstName, String lastName) {
         String key = makeKey(firstName, lastName);
-        if(!database.containsKey(key)) { return flase; }
+        if(!database.containsKey(key)) { return false; }
         database.get(key).bumpYellowCards();
         return true;
     }
@@ -109,6 +110,7 @@ public class SoccerDatabase implements SoccerDB {
     @Override
     // report number of players on a given team (or all players, if null)
     public int numPlayers(String teamName) {
+        if(teamName == null) { return database.size(); }
         int ans = 0;
         for(SoccerPlayer player: database.values()){
             if(player.getTeamName().equals(teamName)) { ans++; }
@@ -125,7 +127,15 @@ public class SoccerDatabase implements SoccerDB {
     // get the nTH player
     @Override
     public SoccerPlayer playerIndex(int idx, String teamName) {
-        return null;
+        ArrayList<SoccerPlayer> lst = new ArrayList<SoccerPlayer>();
+        int y = 0;
+        for(SoccerPlayer player: database.values()){
+            if(teamName == null) {
+                if (y == idx) { return player; }
+                y++;
+            } else if(player.getTeamName().equals(teamName)) { lst.add(player); }
+        }
+        return lst.get(idx);
     }
 
     /**
@@ -168,7 +178,10 @@ public class SoccerDatabase implements SoccerDB {
     // return list of teams
     @Override
     public HashSet<String> getTeams() {
-        return new HashSet<String>();
+        HashSet<String> ans = new HashSet<String>();
+        for(SoccerPlayer player: database.values()){ ans.add(player.getTeamName()); }
+        return ans;
+
     }
 
     /**
