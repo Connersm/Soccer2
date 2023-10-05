@@ -5,6 +5,9 @@ import cs301.Soccer.soccerPlayer.SoccerPlayer;
 import java.io.File;
 import java.lang.reflect.Array;
 import java.util.*;
+import java.io.PrintWriter;
+import java.io.IOException;
+
 
 /**
  * Soccer player database -- presently, all dummied up
@@ -45,11 +48,20 @@ public class SoccerDatabase implements SoccerDB {
      */
     @Override
     public boolean removePlayer(String firstName, String lastName) {
+        // Create a hashtable key using the createKey method
         String key = makeKey(firstName, lastName);
-        if(database.containsKey(key)){ return false; }
-        database.remove(key);
-        return true;
+
+        // Check if the player exists in the database
+        if(database.containsKey(key)) {
+            // If the player exists, remove them and return true
+            database.remove(key);
+            return true;
+        }
+
+        // If the player doesn't exist, return false
+        return false;
     }
+
 
     /**
      * look up a player
@@ -58,10 +70,18 @@ public class SoccerDatabase implements SoccerDB {
      */
     @Override
     public SoccerPlayer getPlayer(String firstName, String lastName) {
+        // Create a hashtable key using the createKey method
         String key = makeKey(firstName, lastName);
-        if(!database.containsKey(key)) { return null; }
-        return database.get(key);
+
+        // Look up the SoccerPlayer object using the key
+        SoccerPlayer player = database.get(key);
+
+        // If the player object is not null, it means the player exists in the database
+        // so we return the player object
+        // If the player object is null, it means the player doesn't exist, so we return null
+        return player;
     }
+
 
     /**
      * increment a player's goals
@@ -108,16 +128,20 @@ public class SoccerDatabase implements SoccerDB {
      * @see SoccerDB#numPlayers(String)
      */
     @Override
-    // report number of players on a given team (or all players, if null)
     public int numPlayers(String teamName) {
-        if(teamName == null) { return database.size(); }
-        int ans = 0;
-        for(SoccerPlayer player: database.values()){
-            if(player.getTeamName().equals(teamName)) { ans++; }
+        if(teamName == null) {
+            return database.size();
         }
-        if(ans == 0) { return -1; }
-        return ans;
+
+        int count = 0;
+        for(SoccerPlayer player : database.values()) {
+            if(player.getTeamName().equals(teamName)) {
+                count++;
+            }
+        }
+        return count;
     }
+
 
     /**
      * gives the nth player on a the given team
@@ -127,16 +151,27 @@ public class SoccerDatabase implements SoccerDB {
     // get the nTH player
     @Override
     public SoccerPlayer playerIndex(int idx, String teamName) {
-        ArrayList<SoccerPlayer> lst = new ArrayList<SoccerPlayer>();
-        int y = 0;
-        for(SoccerPlayer player: database.values()){
-            if(teamName == null) {
-                if (y == idx) { return player; }
-                y++;
-            } else if(player.getTeamName().equals(teamName)) { lst.add(player); }
+        // Check if index is out of bounds
+        if(idx >= numPlayers(teamName)) {
+            return null;
         }
-        return lst.get(idx);
+
+        int count = 0;
+        for(SoccerPlayer player : database.values()) {
+            // If a team name is specified, only consider players from that team
+            if(teamName != null && !player.getTeamName().equals(teamName)) {
+                continue;
+            }
+
+            if(count == idx) {
+                return player;
+            }
+            count++;
+        }
+
+        return null;
     }
+
 
     /**
      * reads database data from a file
@@ -146,19 +181,84 @@ public class SoccerDatabase implements SoccerDB {
     // read data from file
     @Override
     public boolean readData(File file) {
-        return file.exists();
+        Scanner scanner = null;
+
+        try {
+            scanner = new Scanner(file);
+
+            // Clear the current database to ensure old data doesn't interfere
+            database.clear();
+
+            while (scanner.hasNext()) {
+                String firstName = scanner.nextLine();
+                String lastName = scanner.nextLine();
+                int uniformNumber = Integer.parseInt(scanner.nextLine());
+                String teamName = scanner.nextLine();
+                int goals = Integer.parseInt(scanner.nextLine());
+                int yellowCards = Integer.parseInt(scanner.nextLine());
+                int redCards = Integer.parseInt(scanner.nextLine());
+
+                SoccerPlayer player = new SoccerPlayer(firstName, lastName, uniformNumber, teamName);
+                database.put(makeKey(firstName, lastName), player);
+
+                // Bump goals, yellow cards, and red cards
+                for (int i = 0; i < goals; i++) {
+                    player.bumpGoals();
+                }
+                for (int i = 0; i < yellowCards; i++) {
+                    player.bumpYellowCards();
+                }
+                for (int i = 0; i < redCards; i++) {
+                    player.bumpRedCards();
+                }
+            }
+            return true;
+        } catch (IOException e) {
+            Log.e("readData", "Error reading data from file", e);
+            return false;
+        } finally {
+            if (scanner != null) {
+                scanner.close();
+            }
+        }
     }
 
-    /**
-     * write database data to a file
-     *
-     * @see SoccerDB#writeData(File)
-     */
+    @Override
+    public HashSet<String> getTeams() {
+        HashSet<String> teams = new HashSet<>();
+        for (SoccerPlayer player : database.values()) {
+            teams.add(player.getTeamName());
+        }
+        return teams;
+    }
+
     // write data to file
     @Override
     public boolean writeData(File file) {
-        return false;
+        PrintWriter pw = null;
+
+        try {
+            pw = new PrintWriter(file);
+            for (SoccerPlayer player : database.values()) {
+                pw.println(logString(player.getFirstName()));
+                pw.println(logString(player.getLastName()));
+                pw.println(logString(String.valueOf(player.getUniform())));
+                pw.println(logString(player.getTeamName()));
+                pw.println(logString(String.valueOf(player.getGoals())));
+                pw.println(logString(String.valueOf(player.getYellowCards())));
+                pw.println(logString(String.valueOf(player.getRedCards())));
+            }
+            return true;
+        } catch (IOException e) {
+            Log.e("writeData", "Error writing data to file", e);
+            return false;
+        } finally {
+            if (pw != null) {
+                pw.close();
+            }
+        }
     }
+
 
     /**
      * helper method that logcat-logs a string, and then returns the string.
@@ -176,13 +276,6 @@ public class SoccerDatabase implements SoccerDB {
      * @see SoccerDB#getTeams()
      */
     // return list of teams
-    @Override
-    public HashSet<String> getTeams() {
-        HashSet<String> ans = new HashSet<String>();
-        for(SoccerPlayer player: database.values()){ ans.add(player.getTeamName()); }
-        return ans;
-
-    }
 
     /**
      * Helper method to empty the database and the list of teams in the spinner;
