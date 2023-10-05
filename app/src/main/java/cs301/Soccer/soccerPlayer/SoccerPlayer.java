@@ -75,4 +75,9 @@ public class SoccerPlayer {
     public void bumpRedCards() {
         redCards++;
     }
+    public String toString() {
+        return "Name: " + firstName + " " + lastName +
+                "\nTeam: " + teamName + "\n" +
+                "Number: " + uniformNum;
+    }
 }

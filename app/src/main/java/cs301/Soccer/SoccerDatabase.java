@@ -3,6 +3,7 @@ package cs301.Soccer;
 import android.util.Log;
 import cs301.Soccer.soccerPlayer.SoccerPlayer;
 import java.io.File;
+import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -15,7 +16,10 @@ import java.util.*;
 public class SoccerDatabase implements SoccerDB {
 
     // dummied up variable; you will need to change this
-    private Hashtable database;
+    private Hashtable<String,SoccerPlayer> database = new Hashtable<>();
+    private String makeKey(String fName, String lName){
+       return fName + " ## " + lName;
+    }
 
     /**
      * add a player
@@ -25,7 +29,13 @@ public class SoccerDatabase implements SoccerDB {
     @Override
     public boolean addPlayer(String firstName, String lastName,
                              int uniformNumber, String teamName) {
-        return false;
+        String key = makeKey(firstName, lastName);
+        if(database.containsKey(key)){ return false; }
+
+        SoccerPlayer player = new SoccerPlayer(firstName, lastName, uniformNumber, teamName);
+        database.put(key, player);
+        Log.d("addPlayer", database.get(key).toString());
+        return true;
     }
 
     /**
@@ -35,7 +45,10 @@ public class SoccerDatabase implements SoccerDB {
      */
     @Override
     public boolean removePlayer(String firstName, String lastName) {
-        return false;
+        String key = makeKey(firstName, lastName);
+        if(database.containsKey(key)){ return false; }
+        database.remove(key);
+        return true;
     }
 
     /**
@@ -45,7 +58,9 @@ public class SoccerDatabase implements SoccerDB {
      */
     @Override
     public SoccerPlayer getPlayer(String firstName, String lastName) {
-        return null;
+        String key = makeKey(firstName, lastName);
+        if(!database.containsKey(key)) { return null; }
+        return database.get(key);
     }
 
     /**
@@ -55,7 +70,9 @@ public class SoccerDatabase implements SoccerDB {
      */
     @Override
     public boolean bumpGoals(String firstName, String lastName) {
-        return false;
+        String key = makeKey(firstName, lastName);
+        if(!database.containsKey(key)) { return false; }
+        database.get(key).bumpGoals();
     }
 
     /**
@@ -65,7 +82,10 @@ public class SoccerDatabase implements SoccerDB {
      */
     @Override
     public boolean bumpYellowCards(String firstName, String lastName) {
-        return false;
+        String key = makeKey(firstName, lastName);
+        if(!database.containsKey(key)) { return flase; }
+        database.get(key).bumpYellowCards();
+        return true;
     }
 
     /**
@@ -75,7 +95,10 @@ public class SoccerDatabase implements SoccerDB {
      */
     @Override
     public boolean bumpRedCards(String firstName, String lastName) {
-        return false;
+        String key = makeKey(firstName, lastName);
+        if(!database.containsKey(key)) { return false; }
+        database.get(key).bumpRedCards();
+        return true;
     }
 
     /**
@@ -86,7 +109,12 @@ public class SoccerDatabase implements SoccerDB {
     @Override
     // report number of players on a given team (or all players, if null)
     public int numPlayers(String teamName) {
-        return -1;
+        int ans = 0;
+        for(SoccerPlayer player: database.values()){
+            if(player.getTeamName().equals(teamName)) { ans++; }
+        }
+        if(ans == 0) { return -1; }
+        return ans;
     }
 
     /**
