@@ -236,7 +236,7 @@ public class SoccerDatabase implements SoccerDB {
     @Override
     public boolean writeData(File file) {
         PrintWriter pw = null;
-
+        Log.i("written",file.getAbsolutePath());
         try {
             pw = new PrintWriter(file);
             for (SoccerPlayer player : database.values()) {
